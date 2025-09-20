@@ -3,214 +3,270 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Interaktives Pterodactyl Panel</title>
+<title>Pterodactyl Panel Simulator</title>
 <style>
   body {
-    font-family: monospace;
-    background-color: #1b1b1b;
-    color: #f0f0f0;
     margin: 0;
-    padding: 0;
-  }
-  header {
-    background-color: #2c2f33;
-    padding: 20px;
-    text-align: center;
-  }
-  h1 {
-    margin: 0;
-    color: #28a745;
-  }
-  .container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #181818;
+    color: #fff;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 20px;
+    height: 100vh;
   }
-  .server-card {
-    background-color: #2c2f33;
-    border: 1px solid #444;
-    border-radius: 10px;
-    margin: 10px;
-    padding: 15px;
-    width: 350px;
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    background-color: #1f1f1f;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+  }
+  .sidebar h2 {
+    color: #28a745;
     text-align: center;
+    margin: 0 0 20px 0;
+  }
+  .server-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+  }
+  .server-item.active {
+    background-color: #2c2f33;
+    border-left: 4px solid #28a745;
+  }
+  .server-item:hover {
+    background-color: #2c2f33;
+  }
+  /* Main content */
+  .main {
+    flex: 1;
     display: flex;
     flex-direction: column;
   }
-  .server-card h2 {
-    margin: 10px 0;
+  header {
+    background-color: #2c2f33;
+    padding: 15px 20px;
+    font-size: 20px;
+    color: #28a745;
   }
+  .controls {
+    padding: 10px 20px;
+    display: flex;
+    gap: 10px;
+  }
+  button {
+    padding: 8px 15px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: #fff;
+  }
+  button.start { background-color: #28a745; }
+  button.stop { background-color: #ff4d4d; }
+  button.restart { background-color: #ffc107; color: #000; }
   .status {
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-left: 10px;
   }
   .status.online { color: #28a745; }
   .status.offline { color: #ff4d4d; }
-  button {
-    background-color: #28a745;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 5px;
-    color: white;
-    cursor: pointer;
-    margin: 3px;
-  }
-  button.stop { background-color: #ff4d4d; }
-  button.restart { background-color: #ffc107; color: #000; }
-  .console {
+  /* Console */
+  .console-container {
+    flex: 1;
+    padding: 20px;
     background-color: #111;
-    color: #0f0;
+    display: flex;
+    flex-direction: column;
+  }
+  .console-output {
+    flex: 1;
+    background-color: #111;
     border: 1px solid #444;
     border-radius: 5px;
-    padding: 5px;
-    height: 200px;
+    padding: 10px;
     overflow-y: auto;
-    margin-top: 10px;
-    text-align: left;
+    font-family: monospace;
     white-space: pre-wrap;
   }
   .console-input {
-    width: 100%;
-    padding: 5px;
-    margin-top: 5px;
-    border-radius: 5px;
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 4px;
     border: 1px solid #444;
-    background-color: #111;
+    background-color: #222;
     color: #0f0;
+    font-family: monospace;
   }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Pterodactyl Panel Simulator</h1>
-</header>
+<div class="sidebar" id="sidebar">
+  <h2>Servers</h2>
+</div>
 
-<div class="container" id="serverContainer"></div>
+<div class="main">
+  <header id="header">Select a server</header>
+  <div class="controls" id="controls">
+    <!-- Buttons appear dynamically -->
+  </div>
+  <div class="console-container">
+    <div class="console-output" id="consoleOutput"></div>
+    <input type="text" class="console-input" id="consoleInput" placeholder="Enter command..." disabled>
+  </div>
+</div>
 
 <script>
 const servers = [
-  { name: "Server 1", status: "offline", consoleLogs: [] },
-  { name: "Server 2", status: "offline", consoleLogs: [] },
-  { name: "Server 3", status: "offline", consoleLogs: [] }
+  { name: "Survival Server", status: "offline", logs: [] },
+  { name: "Creative Server", status: "offline", logs: [] },
+  { name: "PvP Server", status: "offline", logs: [] }
 ];
 
-function renderServers() {
-  const container = document.getElementById('serverContainer');
-  container.innerHTML = '';
-  
-  servers.forEach((server, index) => {
-    const card = document.createElement('div');
-    card.className = 'server-card';
-    
-    const h2 = document.createElement('h2');
-    h2.textContent = server.name;
-    
-    const statusDiv = document.createElement('div');
-    statusDiv.className = 'status ' + server.status;
-    statusDiv.textContent = server.status.charAt(0).toUpperCase() + server.status.slice(1);
-    
-    const startBtn = document.createElement('button');
-    startBtn.textContent = 'Start';
-    startBtn.onclick = () => startServer(index);
-    
-    const stopBtn = document.createElement('button');
-    stopBtn.textContent = 'Stop';
-    stopBtn.className = 'stop';
-    stopBtn.onclick = () => stopServer(index);
-    
-    const restartBtn = document.createElement('button');
-    restartBtn.textContent = 'Restart';
-    restartBtn.className = 'restart';
-    restartBtn.onclick = () => restartServer(index);
-    
-    const consoleDiv = document.createElement('div');
-    consoleDiv.className = 'console';
-    consoleDiv.id = 'console-' + index;
-    consoleDiv.textContent = server.consoleLogs.join('\n');
-    
-    const input = document.createElement('input');
-    input.className = 'console-input';
-    input.placeholder = 'Type a command...';
-    input.disabled = server.status !== 'online';
-    input.onkeydown = (e) => {
-      if(e.key === 'Enter') {
-        e.preventDefault();
-        sendCommand(index, input.value);
-        input.value = '';
-      }
-    };
-    
-    card.appendChild(h2);
-    card.appendChild(statusDiv);
-    card.appendChild(startBtn);
-    card.appendChild(stopBtn);
-    card.appendChild(restartBtn);
-    card.appendChild(consoleDiv);
-    card.appendChild(input);
-    
-    container.appendChild(card);
+let selectedServerIndex = null;
+
+const sidebar = document.getElementById('sidebar');
+const header = document.getElementById('header');
+const controls = document.getElementById('controls');
+const consoleOutput = document.getElementById('consoleOutput');
+const consoleInput = document.getElementById('consoleInput');
+
+// Render sidebar
+function renderSidebar() {
+  sidebar.querySelectorAll('.server-item').forEach(el => el.remove());
+  servers.forEach((server, i) => {
+    const item = document.createElement('div');
+    item.className = 'server-item' + (i === selectedServerIndex ? ' active' : '');
+    item.textContent = server.name;
+    item.onclick = () => selectServer(i);
+    sidebar.appendChild(item);
   });
 }
 
-function logToConsole(index, message) {
+// Select a server
+function selectServer(index) {
+  selectedServerIndex = index;
+  header.textContent = servers[index].name + ' - ' + servers[index].status.toUpperCase();
+  renderControls();
+  renderConsole();
+  renderSidebar();
+}
+
+// Render buttons
+function renderControls() {
+  controls.innerHTML = '';
+  if (selectedServerIndex === null) return;
+  const server = servers[selectedServerIndex];
+  
+  const startBtn = document.createElement('button');
+  startBtn.className = 'start';
+  startBtn.textContent = 'Start';
+  startBtn.onclick = () => startServer(selectedServerIndex);
+  
+  const stopBtn = document.createElement('button');
+  stopBtn.className = 'stop';
+  stopBtn.textContent = 'Stop';
+  stopBtn.onclick = () => stopServer(selectedServerIndex);
+  
+  const restartBtn = document.createElement('button');
+  restartBtn.className = 'restart';
+  restartBtn.textContent = 'Restart';
+  restartBtn.onclick = () => restartServer(selectedServerIndex);
+  
+  controls.appendChild(startBtn);
+  controls.appendChild(stopBtn);
+  controls.appendChild(restartBtn);
+  
+  consoleInput.disabled = server.status !== 'online';
+}
+
+// Render console
+function renderConsole() {
+  if (selectedServerIndex === null) {
+    consoleOutput.textContent = '';
+    consoleInput.disabled = true;
+    return;
+  }
+  const server = servers[selectedServerIndex];
+  consoleOutput.textContent = server.logs.join('\n');
+  consoleOutput.scrollTop = consoleOutput.scrollHeight;
+}
+
+// Logging
+function log(message) {
+  const server = servers[selectedServerIndex];
   const timestamp = new Date().toLocaleTimeString();
-  servers[index].consoleLogs.push(`[${timestamp}] ${message}`);
-  if (servers[index].consoleLogs.length > 50) servers[index].consoleLogs.shift();
-  const consoleDiv = document.getElementById('console-' + index);
-  consoleDiv.textContent = servers[index].consoleLogs.join('\n');
-  consoleDiv.scrollTop = consoleDiv.scrollHeight;
+  server.logs.push(`[${timestamp}] ${message}`);
+  if (server.logs.length > 50) server.logs.shift();
+  renderConsole();
 }
 
+// Server actions
 function startServer(index) {
-  if (servers[index].status === 'online') return;
-  servers[index].status = 'online';
-  logToConsole(index, 'Server started.');
-  renderServers();
+  const server = servers[index];
+  if (server.status === 'online') return;
+  server.status = 'online';
+  log('Server started.');
+  renderControls();
+  selectServer(index);
 }
-
 function stopServer(index) {
-  if (servers[index].status === 'offline') return;
-  servers[index].status = 'offline';
-  logToConsole(index, 'Server stopped.');
-  renderServers();
+  const server = servers[index];
+  if (server.status === 'offline') return;
+  server.status = 'offline';
+  log('Server stopped.');
+  renderControls();
+  selectServer(index);
 }
-
 function restartServer(index) {
-  logToConsole(index, 'Server restarting...');
-  servers[index].status = 'offline';
-  renderServers();
+  const server = servers[index];
+  log('Server restarting...');
+  server.status = 'offline';
+  renderControls();
+  renderConsole();
   setTimeout(() => {
-    servers[index].status = 'online';
-    logToConsole(index, 'Server restarted successfully.');
-    renderServers();
+    server.status = 'online';
+    log('Server restarted successfully.');
+    renderControls();
+    renderConsole();
   }, 2000);
 }
 
-function sendCommand(index, command) {
-  if (servers[index].status !== 'online') return;
-  logToConsole(index, `> ${command}`);
-  
-  // Simulierte Serverantworten
+// Command input
+consoleInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const cmd = consoleInput.value.trim();
+    if (!cmd) return;
+    const server = servers[selectedServerIndex];
+    log('> ' + cmd);
+    simulateCommand(cmd);
+    consoleInput.value = '';
+  }
+});
+
+function simulateCommand(cmd) {
+  const server = servers[selectedServerIndex];
   let response = '';
-  if (command.toLowerCase() === 'help') {
-    response = 'Available commands: help, status, echo [text], restart';
-  } else if (command.toLowerCase() === 'status') {
-    response = `Server is ${servers[index].status}`;
-  } else if (command.toLowerCase().startsWith('echo ')) {
-    response = command.substring(5);
-  } else if (command.toLowerCase() === 'restart') {
-    restartServer(index);
+  if (cmd.toLowerCase() === 'help') {
+    response = 'Commands: help, status, echo [text], restart';
+  } else if (cmd.toLowerCase() === 'status') {
+    response = `Server is ${server.status}`;
+  } else if (cmd.toLowerCase().startsWith('echo ')) {
+    response = cmd.slice(5);
+  } else if (cmd.toLowerCase() === 'restart') {
+    restartServer(selectedServerIndex);
     return;
   } else {
-    response = `Unknown command: ${command}`;
+    response = `Unknown command: ${cmd}`;
   }
-  
-  logToConsole(index, response);
+  setTimeout(() => log(response), 300);
 }
 
-renderServers();
+// Initial render
+renderSidebar();
 </script>
+
 </body>
 </html>
