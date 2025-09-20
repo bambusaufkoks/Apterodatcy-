@@ -13,6 +13,7 @@
     display: flex;
     height: 100vh;
   }
+
   /* Sidebar */
   .sidebar {
     width: 220px;
@@ -30,6 +31,8 @@
     padding: 12px 20px;
     cursor: pointer;
     border-left: 4px solid transparent;
+    display: flex;
+    justify-content: space-between;
   }
   .server-item.active {
     background-color: #2c2f33;
@@ -38,6 +41,16 @@
   .server-item:hover {
     background-color: #2c2f33;
   }
+  .server-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 5px;
+    margin-top: 6px;
+  }
+  .server-status-dot.online { background-color: #28a745; }
+  .server-status-dot.offline { background-color: #ff4d4d; }
+
   /* Main content */
   .main {
     flex: 1;
@@ -49,7 +62,16 @@
     padding: 15px 20px;
     font-size: 20px;
     color: #28a745;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
+
+  .stats {
+    font-size: 14px;
+    color: #ccc;
+  }
+
   .controls {
     padding: 10px 20px;
     display: flex;
@@ -66,12 +88,7 @@
   button.start { background-color: #28a745; }
   button.stop { background-color: #ff4d4d; }
   button.restart { background-color: #ffc107; color: #000; }
-  .status {
-    font-weight: bold;
-    margin-left: 10px;
-  }
-  .status.online { color: #28a745; }
-  .status.offline { color: #ff4d4d; }
+
   /* Console */
   .console-container {
     flex: 1;
@@ -99,6 +116,12 @@
     color: #0f0;
     font-family: monospace;
   }
+
+  /* Log colors */
+  .log-info { color: #0f0; }
+  .log-warning { color: #ffc107; }
+  .log-error { color: #ff4d4d; }
+  .log-player { color: #00f; }
 </style>
 </head>
 <body>
@@ -108,10 +131,11 @@
 </div>
 
 <div class="main">
-  <header id="header">Select a server</header>
-  <div class="controls" id="controls">
-    <!-- Buttons appear dynamically -->
-  </div>
+  <header id="header">
+    <span>Select a server</span>
+    <span class="stats" id="serverStats"></span>
+  </header>
+  <div class="controls" id="controls"></div>
   <div class="console-container">
     <div class="console-output" id="consoleOutput"></div>
     <input type="text" class="console-input" id="consoleInput" placeholder="Enter command..." disabled>
@@ -120,69 +144,81 @@
 
 <script>
 const servers = [
-  { name: "Survival Server", status: "offline", logs: [] },
-  { name: "Creative Server", status: "offline", logs: [] },
-  { name: "PvP Server", status: "offline", logs: [] }
+  { name: "Survival", status: "offline", logs: [], cpu: 0, ram: 0, disk: 0 },
+  { name: "Creative", status: "offline", logs: [], cpu: 0, ram: 0, disk: 0 },
+  { name: "PvP", status: "offline", logs: [], cpu: 0, ram: 0, disk: 0 }
 ];
 
 let selectedServerIndex = null;
-
 const sidebar = document.getElementById('sidebar');
 const header = document.getElementById('header');
+const serverStats = document.getElementById('serverStats');
 const controls = document.getElementById('controls');
 const consoleOutput = document.getElementById('consoleOutput');
 const consoleInput = document.getElementById('consoleInput');
 
-// Render sidebar
+// Sidebar render
 function renderSidebar() {
   sidebar.querySelectorAll('.server-item').forEach(el => el.remove());
   servers.forEach((server, i) => {
     const item = document.createElement('div');
     item.className = 'server-item' + (i === selectedServerIndex ? ' active' : '');
-    item.textContent = server.name;
     item.onclick = () => selectServer(i);
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = server.name;
+
+    const statusDot = document.createElement('div');
+    statusDot.className = 'server-status-dot ' + server.status;
+
+    item.appendChild(nameSpan);
+    item.appendChild(statusDot);
     sidebar.appendChild(item);
   });
 }
 
-// Select a server
+// Select server
 function selectServer(index) {
   selectedServerIndex = index;
-  header.textContent = servers[index].name + ' - ' + servers[index].status.toUpperCase();
+  updateHeader();
   renderControls();
   renderConsole();
   renderSidebar();
 }
 
-// Render buttons
+// Header update
+function updateHeader() {
+  const server = servers[selectedServerIndex];
+  header.querySelector('span').textContent = server.name + ' - ' + server.status.toUpperCase();
+  serverStats.textContent = `CPU: ${server.cpu}% | RAM: ${server.ram}MB | Disk: ${server.disk}MB`;
+}
+
+// Controls
 function renderControls() {
   controls.innerHTML = '';
   if (selectedServerIndex === null) return;
   const server = servers[selectedServerIndex];
-  
+
   const startBtn = document.createElement('button');
-  startBtn.className = 'start';
-  startBtn.textContent = 'Start';
+  startBtn.className = 'start'; startBtn.textContent = 'Start';
   startBtn.onclick = () => startServer(selectedServerIndex);
-  
+
   const stopBtn = document.createElement('button');
-  stopBtn.className = 'stop';
-  stopBtn.textContent = 'Stop';
+  stopBtn.className = 'stop'; stopBtn.textContent = 'Stop';
   stopBtn.onclick = () => stopServer(selectedServerIndex);
-  
+
   const restartBtn = document.createElement('button');
-  restartBtn.className = 'restart';
-  restartBtn.textContent = 'Restart';
+  restartBtn.className = 'restart'; restartBtn.textContent = 'Restart';
   restartBtn.onclick = () => restartServer(selectedServerIndex);
-  
+
   controls.appendChild(startBtn);
   controls.appendChild(stopBtn);
   controls.appendChild(restartBtn);
-  
+
   consoleInput.disabled = server.status !== 'online';
 }
 
-// Render console
+// Console
 function renderConsole() {
   if (selectedServerIndex === null) {
     consoleOutput.textContent = '';
@@ -190,16 +226,16 @@ function renderConsole() {
     return;
   }
   const server = servers[selectedServerIndex];
-  consoleOutput.textContent = server.logs.join('\n');
+  consoleOutput.innerHTML = server.logs.map(log => `<span class="${log.type}">${log.message}</span>`).join('<br>');
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
 }
 
 // Logging
-function log(message) {
+function log(message, type='log-info') {
   const server = servers[selectedServerIndex];
   const timestamp = new Date().toLocaleTimeString();
-  server.logs.push(`[${timestamp}] ${message}`);
-  if (server.logs.length > 50) server.logs.shift();
+  server.logs.push({message: `[${timestamp}] ${message}`, type});
+  if (server.logs.length > 100) server.logs.shift();
   renderConsole();
 }
 
@@ -208,39 +244,37 @@ function startServer(index) {
   const server = servers[index];
   if (server.status === 'online') return;
   server.status = 'online';
-  log('Server started.');
-  renderControls();
+  simulateStats(index);
   selectServer(index);
+  log('Server started.', 'log-info');
+  simulateServerEvents(index);
 }
 function stopServer(index) {
   const server = servers[index];
   if (server.status === 'offline') return;
   server.status = 'offline';
-  log('Server stopped.');
-  renderControls();
   selectServer(index);
+  log('Server stopped.', 'log-warning');
 }
 function restartServer(index) {
   const server = servers[index];
-  log('Server restarting...');
+  log('Server restarting...', 'log-warning');
   server.status = 'offline';
-  renderControls();
-  renderConsole();
+  selectServer(index);
   setTimeout(() => {
     server.status = 'online';
-    log('Server restarted successfully.');
-    renderControls();
-    renderConsole();
+    log('Server restarted successfully.', 'log-info');
+    simulateStats(index);
+    simulateServerEvents(index);
   }, 2000);
 }
 
-// Command input
+// Console commands
 consoleInput.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
     const cmd = consoleInput.value.trim();
     if (!cmd) return;
-    const server = servers[selectedServerIndex];
-    log('> ' + cmd);
+    log('> ' + cmd, 'log-player');
     simulateCommand(cmd);
     consoleInput.value = '';
   }
@@ -261,7 +295,38 @@ function simulateCommand(cmd) {
   } else {
     response = `Unknown command: ${cmd}`;
   }
-  setTimeout(() => log(response), 300);
+  setTimeout(() => log(response, 'log-info'), 300);
+}
+
+// Simulated server stats
+function simulateStats(index) {
+  const server = servers[index];
+  function update() {
+    if (server.status !== 'online') return;
+    server.cpu = Math.floor(Math.random()*50+10);
+    server.ram = Math.floor(Math.random()*800+200);
+    server.disk = Math.floor(Math.random()*2000+500);
+    if (selectedServerIndex === index) updateHeader();
+    setTimeout(update, 3000);
+  }
+  update();
+}
+
+// Simulated server events
+function simulateServerEvents(index) {
+  const server = servers[index];
+  function eventLoop() {
+    if (server.status !== 'online') return;
+    const events = [
+      () => log('Player Steve joined the server', 'log-player'),
+      () => log('Player Alex joined the server', 'log-player'),
+      () => log('Warning: High memory usage', 'log-warning'),
+      () => log('Player Steve left the server', 'log-player')
+    ];
+    const event = events[Math.floor(Math.random()*events.length)];
+    setTimeout(() => { event(); eventLoop(); }, Math.random()*5000+2000);
+  }
+  eventLoop();
 }
 
 // Initial render
