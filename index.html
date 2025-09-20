@@ -3,281 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pterodactyl Panel Simulator</title>
+<title>Pterodactyl Panel Clone</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-body {
-  margin:0;
-  font-family: 'Inter', sans-serif;
-  background-color: #1a1a1a;
-  color: #fff;
-  display: flex;
-  height: 100vh;
-}
-/* Sidebar */
-.sidebar {
-  width: 220px;
-  background-color: #111;
-  display: flex;
-  flex-direction: column;
-}
-.sidebar h2 {
-  color: #28a745;
-  text-align: center;
-  margin: 20px 0;
-  font-weight: 600;
-}
-.sidebar-item {
-  padding: 15px 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-left: 4px solid transparent;
-}
-.sidebar-item.active {
-  background-color: #222;
-  border-left: 4px solid #28a745;
-}
-.sidebar-item:hover {
-  background-color: #222;
-}
-.status-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-.status-dot.online { background: #28a745; }
-.status-dot.offline { background: #ff4d4d; }
-.status-dot.installing { background: #ffc107; }
-
-/* Main panel */
-.main {
-  flex:1;
-  display:flex;
-  flex-direction: column;
-}
-.header {
-  background: #222;
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.header h1 { margin:0; font-size: 18px; }
-.header .stats { font-size: 14px; color:#aaa; }
-
-.controls {
-  padding: 10px 20px;
-  display: flex;
-  gap: 10px;
-}
-button {
-  padding: 8px 15px;
-  border-radius: 5px;
-  border:none;
-  cursor:pointer;
-  font-weight:600;
-  color:#fff;
-}
-button.start {background:#28a745;}
-button.stop {background:#ff4d4d;}
-button.restart {background:#ffc107; color:#000;}
-button.install {background:#17a2b8;}
-
-/* Tabs */
-.tabs {
-  display:flex;
-  background:#111;
-}
-.tab {
-  padding:10px 20px;
-  cursor:pointer;
-  border-bottom:3px solid transparent;
-}
-.tab.active { border-bottom:3px solid #28a745; }
-
-/* Content */
-.tab-content { flex:1; display:flex; flex-direction:column; padding:15px; }
-
-/* Console */
-.console-output {
-  flex:1;
-  background:#111;
-  border:1px solid #333;
-  border-radius:5px;
-  padding:10px;
-  font-family: monospace;
-  overflow-y:auto;
-  white-space: pre-wrap;
-}
-.console-input {
-  margin-top:10px;
-  padding:8px;
-  border-radius:5px;
-  border:1px solid #333;
-  background:#222;
-  color:#0f0;
-  font-family: monospace;
-}
-
-/* Progress bars */
-.progress-bar {
-  background:#333;
-  border-radius:5px;
-  height:15px;
-  margin-top:5px;
-  overflow:hidden;
-}
-.progress-bar-inner {
-  height:100%;
-  background:#28a745;
-  width:0%;
-  transition:width 0.2s;
-}
-
-/* Log colors */
+body { margin:0; font-family: 'Inter', sans-serif; background:#2b2f3a; color:#fff; }
+header { background:#1f222a; display:flex; align-items:center; padding:0 20px; height:50px; }
+header .tabs { display:flex; gap:20px; margin-left:20px; }
+header .tab { padding:15px 10px; cursor:pointer; color:#aaa; border-bottom:3px solid transparent; }
+header .tab.active { border-bottom:3px solid #4dabf7; color:#fff; font-weight:600; }
+.container { display:flex; height:calc(100vh - 50px); }
+.console { flex:3; background:#1a1c24; margin:20px; border-radius:8px; display:flex; flex-direction:column; }
+.console-output { flex:1; padding:15px; font-family: monospace; overflow-y:auto; background:#0f1115; border-radius:8px; white-space:pre-wrap; }
+.console-input { margin-top:10px; padding:10px; border-radius:5px; border:none; background:#22252f; color:#0f0; font-family: monospace; }
+.sidebar { width:300px; margin:20px 0 20px 0; display:flex; flex-direction:column; gap:15px; }
+.card { background:#1f222a; padding:15px; border-radius:8px; display:flex; flex-direction:column; gap:10px; }
+.card button { padding:10px; border:none; border-radius:5px; cursor:pointer; font-weight:600; }
+.start { background:#4dabf7; color:#fff; }
+.restart { background:#aaa; color:#fff; }
+.stop { background:#f04d4d; color:#fff; }
+.stat { display:flex; justify-content:space-between; font-size:14px; color:#aaa; }
+.progress-bar { background:#22252f; border-radius:5px; height:12px; overflow:hidden; }
+.progress-bar-inner { height:100%; background:#4dabf7; width:0%; transition:width 0.2s; }
 .log-info { color:#0f0; }
 .log-warning { color:#ffc107; }
-.log-error { color:#ff4d4d; }
-.log-player { color:#00f; }
+.log-error { color:#f04d4d; }
 </style>
 </head>
 <body>
 
-<div class="sidebar" id="sidebar">
-  <h2>Servers</h2>
-</div>
-
-<div class="main">
-  <div class="header">
-    <h1 id="serverName">Select a server</h1>
-    <div class="stats" id="serverStats"></div>
-  </div>
-  <div class="controls" id="controls"></div>
+<header>
+  <div>Pterodactyl</div>
   <div class="tabs">
     <div class="tab active" data-tab="console">Console</div>
     <div class="tab" data-tab="files">Files</div>
+    <div class="tab" data-tab="databases">Databases</div>
     <div class="tab" data-tab="schedules">Schedules</div>
+    <div class="tab" data-tab="users">Users</div>
   </div>
-  <div class="tab-content">
-    <div class="tab-panel" id="consolePanel">
-      <div class="console-output" id="consoleOutput"></div>
-      <input type="text" class="console-input" id="consoleInput" placeholder="Enter command..." disabled>
-    </div>
-    <div class="tab-panel" id="filesPanel" style="display:none;">
-      <p>File manager simulation</p>
-    </div>
-    <div class="tab-panel" id="schedulesPanel" style="display:none;">
-      <p>Schedules simulation</p>
+</header>
+
+<div class="container">
+  <div class="console">
+    <div class="console-output" id="consoleOutput"></div>
+    <input class="console-input" id="consoleInput" placeholder="Enter command..." />
+  </div>
+  <div class="sidebar">
+    <div class="card">
+      <div class="stat">Address <span>10.0.10.11:19152</span></div>
+      <div class="stat">Uptime <span id="uptime">0h 0m 0s</span></div>
+      <div class="stat">CPU <span id="cpu">0%</span></div>
+      <div class="stat">Memory <span id="ram">0 MiB / 4 GiB</span></div>
+      <div class="stat">Disk <span id="disk">0 MiB / 10 GiB</span></div>
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="start" onclick="log('Server started','log-info')">Start</button>
+        <button class="restart" onclick="log('Server restarted','log-warning')">Restart</button>
+        <button class="stop" onclick="log('Server stopped','log-error')">Stop</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-const servers = [
-  { name:"Survival", status:"offline", installed:false, installing:false, cpu:0, ram:0, disk:0, logs:[] },
-  { name:"Creative", status:"offline", installed:false, installing:false, cpu:0, ram:0, disk:0, logs:[] },
-  { name:"PvP", status:"offline", installed:false, installing:false, cpu:0, ram:0, disk:0, logs:[] }
-];
-
-let selectedServer = null;
-
-// Render sidebar
-function renderSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.querySelectorAll('.sidebar-item')?.forEach(el=>el.remove());
-  servers.forEach((s,i)=>{
-    const item = document.createElement('div');
-    item.className='sidebar-item'+(selectedServer===i?' active':'');
-    item.onclick=()=>selectServer(i);
-    const nameSpan = document.createElement('span'); nameSpan.textContent=s.name;
-    const dot = document.createElement('div'); dot.className='status-dot '+(s.installing?'installing':s.status);
-    item.appendChild(nameSpan); item.appendChild(dot);
-    sidebar.appendChild(item);
-  });
-}
-
-function selectServer(index){
-  selectedServer=index;
-  updateHeader();
-  renderControls();
-  renderConsole();
-  renderSidebar();
-}
-
-function updateHeader(){
-  const s=servers[selectedServer];
-  document.getElementById('serverName').textContent = s.name+' - '+(s.installing?'INSTALLING':s.status.toUpperCase());
-  document.getElementById('serverStats').textContent = s.installed?'Installed':'Not Installed';
-}
-
-function renderControls(){
-  const controls = document.getElementById('controls');
-  controls.innerHTML='';
-  if(selectedServer===null) return;
-  const s = servers[selectedServer];
-  if(!s.installed && !s.installing){
-    const installBtn=document.createElement('button'); installBtn.className='install'; installBtn.textContent='Install';
-    installBtn.onclick=()=>installServer(selectedServer); controls.appendChild(installBtn);
-  }
-  const startBtn=document.createElement('button'); startBtn.className='start'; startBtn.textContent='Start'; startBtn.onclick=()=>startServer(selectedServer);
-  const stopBtn=document.createElement('button'); stopBtn.className='stop'; stopBtn.textContent='Stop'; stopBtn.onclick=()=>stopServer(selectedServer);
-  const restartBtn=document.createElement('button'); restartBtn.className='restart'; restartBtn.textContent='Restart'; restartBtn.onclick=()=>restartServer(selectedServer);
-  controls.appendChild(startBtn); controls.appendChild(stopBtn); controls.appendChild(restartBtn);
-  document.getElementById('consoleInput').disabled = !s.installed || s.status!=='online';
-}
-
-function renderConsole(){
-  const output = document.getElementById('consoleOutput');
-  if(selectedServer===null){ output.textContent=''; return; }
-  const s=servers[selectedServer];
-  output.innerHTML = s.logs.map(l=>`<span class="${l.type}">${l.message}</span>`).join('<br>');
-  output.scrollTop = output.scrollHeight;
-}
-
-function log(message,type='log-info'){
-  if(selectedServer===null) return;
-  const s = servers[selectedServer];
-  const t = new Date().toLocaleTimeString();
-  s.logs.push({message:`[${t}] ${message}`, type});
-  if(s.logs.length>100) s.logs.shift();
-  renderConsole();
-}
-
-function installServer(index){
-  const s=servers[index]; s.installing=true; updateHeader(); renderControls(); log('Installation started...','log-info');
-  let progress=0; const interval=setInterval(()=>{
-    progress+=5; if(progress>=100){ clearInterval(interval); s.installing=false; s.installed=true; s.status='offline'; log('Installation complete!','log-info'); updateHeader(); renderControls(); return;}
-  },200);
-}
-
-function startServer(index){ const s=servers[index]; if(!s.installed||s.status==='online') return; s.status='online'; log('Server started','log-info'); simulateEvents(index); updateHeader(); renderControls();}
-function stopServer(index){ const s=servers[index]; if(s.status==='offline') return; s.status='offline'; log('Server stopped','log-warning'); updateHeader(); renderControls();}
-function restartServer(index){ const s=servers[index]; log('Restarting server','log-warning'); s.status='offline'; updateHeader(); renderControls(); setTimeout(()=>{ s.status='online'; log('Server restarted','log-info'); simulateEvents(index); updateHeader(); renderControls(); },2000); }
-
-document.getElementById('consoleInput').addEventListener('keydown',e=>{
-  if(e.key==='Enter'){ const cmd=e.target.value.trim(); if(!cmd) return; log('> '+cmd,'log-player'); e.target.value='';}
-});
-
-// Tab functionality
+// Tabs
 document.querySelectorAll('.tab').forEach(tab=>{
-  tab.onclick=()=>{ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active');
-  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
-  document.getElementById(tab.dataset.tab+'Panel').style.display='flex';}
+  tab.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+  }
 });
 
-function simulateEvents(index){
-  const s=servers[index];
-  function loop(){ if(s.status!=='online') return;
-    const events=[()=>log('Player Steve joined','log-player'),()=>log('Player Alex joined','log-player'),()=>log('Warning: High memory','log-warning'),()=>log('Player left','log-player')];
-    const ev=events[Math.floor(Math.random()*events.length)];
-    setTimeout(()=>{ ev(); loop(); },Math.random()*5000+2000);
-  }
-  loop();
+// Console
+const consoleOutput = document.getElementById('consoleOutput');
+function log(msg,type='log-info'){
+  const line = document.createElement('div'); line.className=type; line.textContent=msg;
+  consoleOutput.appendChild(line);
+  consoleOutput.scrollTop = consoleOutput.scrollHeight;
 }
 
-renderSidebar();
+// Simulate server stats
+let uptimeSeconds=0;
+setInterval(()=>{
+  uptimeSeconds++;
+  const h=Math.floor(uptimeSeconds/3600);
+  const m=Math.floor((uptimeSeconds%3600)/60);
+  const s=uptimeSeconds%60;
+  document.getElementById('uptime').textContent=`${h}h ${m}m ${s}s`;
+  document.getElementById('cpu').textContent=(Math.random()*5+1).toFixed(2)+'%';
+  document.getElementById('ram').textContent=(Math.random()*400+100).toFixed(2)+' MiB / 4 GiB';
+  document.getElementById('disk').textContent=(Math.random()*500+50).toFixed(2)+' MiB / 10 GiB';
+},1000);
+
+// Console input
+document.getElementById('consoleInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    log('> '+e.target.value,'log-info');
+    e.target.value='';
+  }
+});
 </script>
+
 </body>
 </html>
