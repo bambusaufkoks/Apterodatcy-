@@ -6,7 +6,7 @@
 <title>Interaktives Pterodactyl Panel</title>
 <style>
   body {
-    font-family: Arial, sans-serif;
+    font-family: monospace;
     background-color: #1b1b1b;
     color: #f0f0f0;
     margin: 0;
@@ -33,8 +33,10 @@
     border-radius: 10px;
     margin: 10px;
     padding: 15px;
-    width: 300px;
+    width: 350px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
   }
   .server-card h2 {
     margin: 10px 0;
@@ -43,46 +45,49 @@
     font-weight: bold;
     margin-bottom: 10px;
   }
-  .status.online {
-    color: #28a745;
-  }
-  .status.offline {
-    color: #ff4d4d;
-  }
+  .status.online { color: #28a745; }
+  .status.offline { color: #ff4d4d; }
   button {
     background-color: #28a745;
     border: none;
-    padding: 10px 15px;
+    padding: 8px 12px;
     border-radius: 5px;
     color: white;
     cursor: pointer;
-    margin: 5px;
+    margin: 3px;
   }
-  button.stop {
-    background-color: #ff4d4d;
-  }
-  button.restart {
-    background-color: #ffc107;
-  }
-  textarea {
-    width: 90%;
-    height: 120px;
-    margin-top: 10px;
+  button.stop { background-color: #ff4d4d; }
+  button.restart { background-color: #ffc107; color: #000; }
+  .console {
     background-color: #111;
     color: #0f0;
     border: 1px solid #444;
     border-radius: 5px;
     padding: 5px;
-    font-family: monospace;
+    height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+    text-align: left;
+    white-space: pre-wrap;
+  }
+  .console-input {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 1px solid #444;
+    background-color: #111;
+    color: #0f0;
   }
 </style>
 </head>
 <body>
+
 <header>
-  <h1>Interaktives Pterodactyl Panel</h1>
+  <h1>Pterodactyl Panel Simulator</h1>
 </header>
-<div class="container" id="serverContainer">
-</div>
+
+<div class="container" id="serverContainer"></div>
 
 <script>
 const servers = [
@@ -94,6 +99,7 @@ const servers = [
 function renderServers() {
   const container = document.getElementById('serverContainer');
   container.innerHTML = '';
+  
   servers.forEach((server, index) => {
     const card = document.createElement('div');
     card.className = 'server-card';
@@ -119,25 +125,48 @@ function renderServers() {
     restartBtn.className = 'restart';
     restartBtn.onclick = () => restartServer(index);
     
-    const consoleArea = document.createElement('textarea');
-    consoleArea.readOnly = true;
-    consoleArea.value = server.consoleLogs.join('\n');
+    const consoleDiv = document.createElement('div');
+    consoleDiv.className = 'console';
+    consoleDiv.id = 'console-' + index;
+    consoleDiv.textContent = server.consoleLogs.join('\n');
+    
+    const input = document.createElement('input');
+    input.className = 'console-input';
+    input.placeholder = 'Type a command...';
+    input.disabled = server.status !== 'online';
+    input.onkeydown = (e) => {
+      if(e.key === 'Enter') {
+        e.preventDefault();
+        sendCommand(index, input.value);
+        input.value = '';
+      }
+    };
     
     card.appendChild(h2);
     card.appendChild(statusDiv);
     card.appendChild(startBtn);
     card.appendChild(stopBtn);
     card.appendChild(restartBtn);
-    card.appendChild(consoleArea);
+    card.appendChild(consoleDiv);
+    card.appendChild(input);
     
     container.appendChild(card);
   });
 }
 
+function logToConsole(index, message) {
+  const timestamp = new Date().toLocaleTimeString();
+  servers[index].consoleLogs.push(`[${timestamp}] ${message}`);
+  if (servers[index].consoleLogs.length > 50) servers[index].consoleLogs.shift();
+  const consoleDiv = document.getElementById('console-' + index);
+  consoleDiv.textContent = servers[index].consoleLogs.join('\n');
+  consoleDiv.scrollTop = consoleDiv.scrollHeight;
+}
+
 function startServer(index) {
   if (servers[index].status === 'online') return;
   servers[index].status = 'online';
-  logToConsole(index, 'Server started...');
+  logToConsole(index, 'Server started.');
   renderServers();
 }
 
@@ -159,10 +188,26 @@ function restartServer(index) {
   }, 2000);
 }
 
-function logToConsole(index, message) {
-  const timestamp = new Date().toLocaleTimeString();
-  servers[index].consoleLogs.push(`[${timestamp}] ${message}`);
-  if (servers[index].consoleLogs.length > 20) servers[index].consoleLogs.shift();
+function sendCommand(index, command) {
+  if (servers[index].status !== 'online') return;
+  logToConsole(index, `> ${command}`);
+  
+  // Simulierte Serverantworten
+  let response = '';
+  if (command.toLowerCase() === 'help') {
+    response = 'Available commands: help, status, echo [text], restart';
+  } else if (command.toLowerCase() === 'status') {
+    response = `Server is ${servers[index].status}`;
+  } else if (command.toLowerCase().startsWith('echo ')) {
+    response = command.substring(5);
+  } else if (command.toLowerCase() === 'restart') {
+    restartServer(index);
+    return;
+  } else {
+    response = `Unknown command: ${command}`;
+  }
+  
+  logToConsole(index, response);
 }
 
 renderServers();
