@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pterodactyl Panel Mockup</title>
+<title>Interaktives Pterodactyl Panel</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -33,7 +33,7 @@
     border-radius: 10px;
     margin: 10px;
     padding: 15px;
-    width: 250px;
+    width: 300px;
     text-align: center;
   }
   .server-card h2 {
@@ -61,34 +61,111 @@
   button.stop {
     background-color: #ff4d4d;
   }
+  button.restart {
+    background-color: #ffc107;
+  }
+  textarea {
+    width: 90%;
+    height: 120px;
+    margin-top: 10px;
+    background-color: #111;
+    color: #0f0;
+    border: 1px solid #444;
+    border-radius: 5px;
+    padding: 5px;
+    font-family: monospace;
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>Pterodactyl Panel</h1>
+  <h1>Interaktives Pterodactyl Panel</h1>
 </header>
-<div class="container">
-  <div class="server-card">
-    <h2>Server 1</h2>
-    <div class="status online">Online</div>
-    <button onclick="alert('Start Server 1')">Start</button>
-    <button class="stop" onclick="alert('Stop Server 1')">Stop</button>
-    <button onclick="alert('Restart Server 1')">Restart</button>
-  </div>
-  <div class="server-card">
-    <h2>Server 2</h2>
-    <div class="status offline">Offline</div>
-    <button onclick="alert('Start Server 2')">Start</button>
-    <button class="stop" onclick="alert('Stop Server 2')">Stop</button>
-    <button onclick="alert('Restart Server 2')">Restart</button>
-  </div>
-  <div class="server-card">
-    <h2>Server 3</h2>
-    <div class="status online">Online</div>
-    <button onclick="alert('Start Server 3')">Start</button>
-    <button class="stop" onclick="alert('Stop Server 3')">Stop</button>
-    <button onclick="alert('Restart Server 3')">Restart</button>
-  </div>
+<div class="container" id="serverContainer">
 </div>
+
+<script>
+const servers = [
+  { name: "Server 1", status: "offline", consoleLogs: [] },
+  { name: "Server 2", status: "offline", consoleLogs: [] },
+  { name: "Server 3", status: "offline", consoleLogs: [] }
+];
+
+function renderServers() {
+  const container = document.getElementById('serverContainer');
+  container.innerHTML = '';
+  servers.forEach((server, index) => {
+    const card = document.createElement('div');
+    card.className = 'server-card';
+    
+    const h2 = document.createElement('h2');
+    h2.textContent = server.name;
+    
+    const statusDiv = document.createElement('div');
+    statusDiv.className = 'status ' + server.status;
+    statusDiv.textContent = server.status.charAt(0).toUpperCase() + server.status.slice(1);
+    
+    const startBtn = document.createElement('button');
+    startBtn.textContent = 'Start';
+    startBtn.onclick = () => startServer(index);
+    
+    const stopBtn = document.createElement('button');
+    stopBtn.textContent = 'Stop';
+    stopBtn.className = 'stop';
+    stopBtn.onclick = () => stopServer(index);
+    
+    const restartBtn = document.createElement('button');
+    restartBtn.textContent = 'Restart';
+    restartBtn.className = 'restart';
+    restartBtn.onclick = () => restartServer(index);
+    
+    const consoleArea = document.createElement('textarea');
+    consoleArea.readOnly = true;
+    consoleArea.value = server.consoleLogs.join('\n');
+    
+    card.appendChild(h2);
+    card.appendChild(statusDiv);
+    card.appendChild(startBtn);
+    card.appendChild(stopBtn);
+    card.appendChild(restartBtn);
+    card.appendChild(consoleArea);
+    
+    container.appendChild(card);
+  });
+}
+
+function startServer(index) {
+  if (servers[index].status === 'online') return;
+  servers[index].status = 'online';
+  logToConsole(index, 'Server started...');
+  renderServers();
+}
+
+function stopServer(index) {
+  if (servers[index].status === 'offline') return;
+  servers[index].status = 'offline';
+  logToConsole(index, 'Server stopped.');
+  renderServers();
+}
+
+function restartServer(index) {
+  logToConsole(index, 'Server restarting...');
+  servers[index].status = 'offline';
+  renderServers();
+  setTimeout(() => {
+    servers[index].status = 'online';
+    logToConsole(index, 'Server restarted successfully.');
+    renderServers();
+  }, 2000);
+}
+
+function logToConsole(index, message) {
+  const timestamp = new Date().toLocaleTimeString();
+  servers[index].consoleLogs.push(`[${timestamp}] ${message}`);
+  if (servers[index].consoleLogs.length > 20) servers[index].consoleLogs.shift();
+}
+
+renderServers();
+</script>
 </body>
 </html>
