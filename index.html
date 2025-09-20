@@ -3,10 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grüner Pterodactyl</title>
+<title>Pterodactyl Panel Mockup</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #1b1b1b;
+    color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+  }
+  header {
+    background-color: #2c2f33;
+    padding: 20px;
+    text-align: center;
+  }
+  h1 {
+    margin: 0;
+    color: #28a745;
+  }
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 20px;
+  }
+  .server-card {
+    background-color: #2c2f33;
+    border: 1px solid #444;
+    border-radius: 10px;
+    margin: 10px;
+    padding: 15px;
+    width: 250px;
+    text-align: center;
+  }
+  .server-card h2 {
+    margin: 10px 0;
+  }
+  .status {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .status.online {
+    color: #28a745;
+  }
+  .status.offline {
+    color: #ff4d4d;
+  }
+  button {
+    background-color: #28a745;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    margin: 5px;
+  }
+  button.stop {
+    background-color: #ff4d4d;
+  }
+</style>
 </head>
 <body>
-<h1>Mein grüner Pterodactyl!</h1>
-<img src="pterodactyl.svg" alt="Pterodactyl" />
+<header>
+  <h1>Pterodactyl Panel</h1>
+</header>
+<div class="container">
+  <div class="server-card">
+    <h2>Server 1</h2>
+    <div class="status online">Online</div>
+    <button onclick="alert('Start Server 1')">Start</button>
+    <button class="stop" onclick="alert('Stop Server 1')">Stop</button>
+    <button onclick="alert('Restart Server 1')">Restart</button>
+  </div>
+  <div class="server-card">
+    <h2>Server 2</h2>
+    <div class="status offline">Offline</div>
+    <button onclick="alert('Start Server 2')">Start</button>
+    <button class="stop" onclick="alert('Stop Server 2')">Stop</button>
+    <button onclick="alert('Restart Server 2')">Restart</button>
+  </div>
+  <div class="server-card">
+    <h2>Server 3</h2>
+    <div class="status online">Online</div>
+    <button onclick="alert('Start Server 3')">Start</button>
+    <button class="stop" onclick="alert('Stop Server 3')">Stop</button>
+    <button onclick="alert('Restart Server 3')">Restart</button>
+  </div>
+</div>
 </body>
 </html>
