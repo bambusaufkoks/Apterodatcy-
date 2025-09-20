@@ -148,9 +148,9 @@ button.install { background-color: #17a2b8; }
 
 <script>
 const servers = [
-  { name:"Survival", status:"offline", logs:[], cpu:0, ram:0, disk:0, installed:false, installing:false },
-  { name:"Creative", status:"offline", logs:[], cpu:0, ram:0, disk:0, installed:false, installing:false },
-  { name:"PvP", status:"offline", logs:[], cpu:0, ram:0, disk:0, installed:false, installing:false }
+  { name:"Survival", status:"offline", installed:false, installing:false, cpu:0, ram:0, disk:0, logs:[] },
+  { name:"Creative", status:"offline", installed:false, installing:false, cpu:0, ram:0, disk:0, logs:[] },
+  { name:"PvP", status:"offline", installed:false, installing:false, cpu:0, ram:0, disk:0, logs:[] }
 ];
 
 let selectedServerIndex = null;
@@ -164,12 +164,11 @@ const consoleInput = document.getElementById('consoleInput');
 function renderSidebar(){
   sidebar.querySelectorAll('.server-item').forEach(el=>el.remove());
   servers.forEach((s,i)=>{
-    const item = document.createElement('div');
+    const item=document.createElement('div');
     item.className='server-item'+(i===selectedServerIndex?' active':'');
     item.onclick=()=>selectServer(i);
-    const nameSpan = document.createElement('span'); nameSpan.textContent=s.name;
-    const statusDot = document.createElement('div'); 
-    statusDot.className='server-status-dot '+(s.installing?'installing':s.status);
+    const nameSpan=document.createElement('span'); nameSpan.textContent=s.name;
+    const statusDot=document.createElement('div'); statusDot.className='server-status-dot '+(s.installing?'installing':s.status);
     item.appendChild(nameSpan); item.appendChild(statusDot);
     sidebar.appendChild(item);
   });
@@ -187,16 +186,14 @@ function updateHeader(){
 
 function renderControls(){
   controls.innerHTML='';
-  if(selectedServerIndex===null)return;
+  if(selectedServerIndex===null) return;
   const s=servers[selectedServerIndex];
-  
   if(!s.installed && !s.installing){
     const installBtn=document.createElement('button');
     installBtn.className='install'; installBtn.textContent='Install';
     installBtn.onclick=()=>installServer(selectedServerIndex);
     controls.appendChild(installBtn);
   }
-  
   const startBtn=document.createElement('button'); startBtn.className='start'; startBtn.textContent='Start';
   startBtn.onclick=()=>startServer(selectedServerIndex);
   const stopBtn=document.createElement('button'); stopBtn.className='stop'; stopBtn.textContent='Stop';
@@ -204,7 +201,7 @@ function renderControls(){
   const restartBtn=document.createElement('button'); restartBtn.className='restart'; restartBtn.textContent='Restart';
   restartBtn.onclick=()=>restartServer(selectedServerIndex);
   controls.appendChild(startBtn); controls.appendChild(stopBtn); controls.appendChild(restartBtn);
-  
+
   consoleInput.disabled = s.status!=='online' || !s.installed;
 }
 
@@ -215,63 +212,19 @@ function renderConsole(){
   consoleOutput.scrollTop=consoleOutput.scrollHeight;
 }
 
-// Logging
 function log(message,type='log-info'){
   const s=servers[selectedServerIndex]; const t=new Date().toLocaleTimeString();
   s.logs.push({message:`[${t}] ${message}`, type}); if(s.logs.length>100)s.logs.shift();
   renderConsole();
 }
 
-// Simulated server actions
 function installServer(index){
-  const s=servers[index]; s.installing=true; renderSidebar(); updateHeader(); renderControls();
-  log('Installation started...', 'log-info');
-  let progress=0;
-  const interval=setInterval(()=>{
+  const s=servers[index]; s.installing=true; renderSidebar(); updateHeader(); renderControls(); log('Installation started...', 'log-info');
+  let progress=0; const interval=setInterval(()=>{
     progress+=5; if(progress>=100){ clearInterval(interval); s.installing=false; s.installed=true; s.status='offline'; log('Installation complete!', 'log-info'); updateHeader(); renderControls(); return; }
   },200);
 }
 
 function startServer(index){ const s=servers[index]; if(!s.installed||s.status==='online')return; s.status='online'; log('Server started.', 'log-info'); simulateStats(index); simulateServerEvents(index); updateHeader(); renderControls(); }
 function stopServer(index){ const s=servers[index]; if(s.status==='offline')return; s.status='offline'; log('Server stopped.', 'log-warning'); updateHeader(); renderControls(); }
-function restartServer(index){ const s=servers[index]; log('Server restarting...', 'log-warning'); s.status='offline'; updateHeader(); renderControls(); setTimeout(()=>{ s.status='online'; log('Server restarted successfully.', 'log-info'); simulateStats(index); simulateServerEvents(index); updateHeader(); renderControls(); },2000); }
-
-// Console input
-consoleInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ const cmd=consoleInput.value.trim(); if(!cmd)return; log('> '+cmd,'log-player'); simulateCommand(cmd); consoleInput.value=''; }});
-
-function simulateCommand(cmd){
-  const s=servers[selectedServerIndex]; let r='';
-  if(cmd.toLowerCase()==='help')r='Commands: help, status, echo [text], restart';
-  else if(cmd.toLowerCase()==='status')r=`Server is ${s.status}`;
-  else if(cmd.toLowerCase().startsWith('echo '))r=cmd.slice(5);
-  else if(cmd.toLowerCase()==='restart'){ restartServer(selectedServerIndex); return; }
-  else r=`Unknown command: ${cmd}`;
-  setTimeout(()=>log(r,'log-info'),300);
-}
-
-function simulateStats(index){
-  const s=servers[index];
-  function update(){ if(s.status!=='online')return; s.cpu=Math.floor(Math.random()*50+10); s.ram=Math.floor(Math.random()*800+200); s.disk=Math.floor(Math.random()*2000+500); if(selectedServerIndex===index)updateHeader(); setTimeout(update,3000);}
-  update();
-}
-
-function simulateServerEvents(index){
-  const s=servers[index];
-  function eventLoop(){ if(s.status!=='online')return;
-    const events=[
-      ()=>log('Player Steve joined the server','log-player'),
-      ()=>log('Player Alex joined the server','log-player'),
-      ()=>log('Warning: High memory usage','log-warning'),
-      ()=>log('Player Steve left the server','log-player')
-    ];
-    const e=events[Math.floor(Math.random()*events.length)];
-    setTimeout(()=>{ e(); eventLoop(); },Math.random()*5000+2000);
-  }
-  eventLoop();
-}
-
-// Initial render
-renderSidebar();
-</script>
-</body>
-</html>
+function restartServer(index){ const s=servers[index]; log('Server restarting...', 'log-warning'); s.status='offline'; updateHeader(); renderControls(); setTimeout(()=>{ s.status='online'; log('Server restarted successfully.', '
